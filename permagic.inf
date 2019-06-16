@@ -43,8 +43,8 @@ Constant Headline "^A Really Short Interactive Comical Tragic Glulx Port.
                    ^Copyright David Fillmore 1999^";
 #endif;
 
-!This routine is so that I don't have to type out two different sets of styles,
-!one for glulx and one for zcode. Instead I just call changefont(bold_font);
+! This routine is so that I don't have to type out two different sets of styles,
+! one for glulx and one for zcode. Instead I just call changefont(bold_font);
 [ changefont font;
   if (font == bold_font)
   { #ifdef TARGET_ZCODE;
@@ -61,8 +61,6 @@ Constant Headline "^A Really Short Interactive Comical Tragic Glulx Port.
     #endif;
   }
 ];
-!Constant Grammar__Version = 2; !I tried this out, but it didn't make much 
-                                !difference. I'm still not sure what it does.
 
 Constant Max_score 3;
 Constant Number_Tasks 3;
@@ -244,7 +242,7 @@ Include "V6";
     ! needed to prevent calling of (-1).Finish()
     ActiveZWinStyle=DavidZWinStyle;
     if (style == 0)
-    	style = DavidZWinstyle;
+            style = DavidZWinstyle;
     style.Activate();
     @erase_window -1;
     give ActiveZWinstyle ~general;    
@@ -253,47 +251,49 @@ Include "V6";
 
 Release 2;
 
-Object 	DavidZWinstyle
+Object DavidZWinstyle
    class ZWinstyle,
    with Init 
-        [ tmp; tmp = TitleBar.GetHeight();
-               !ZWin4.SetColours(-1, c_white);
-               @split_window tmp;
-               StatusWin.SetSize(TitleBar.GetHeight(), TitleBar.GetWidth());
-               ZWin2.SetSize(Pillar1.GetHeight(), Pillar1.GetWidth());
-               ZWin3.SetSize(Pillar2.GetHeight(), Pillar2.GetWidth());
-               ZWin2.SetLoc( StatusWin.GetYSize(), 1);
-               ZWin3.SetLoc( StatusWin.GetYSize(), (ZWin2.GetXSize() + MainWin.GetXSize()));
+        [ tmp; 
+          tmp = TitleBar.GetHeight();
+          !ZWin4.SetColours(-1, c_white);
+          @split_window tmp;
+          StatusWin.SetSize(TitleBar.GetHeight(), TitleBar.GetWidth());
+          ZWin2.SetSize(Pillar1.GetHeight(), Pillar1.GetWidth());
+          ZWin3.SetSize(Pillar2.GetHeight(), Pillar2.GetWidth());
+          ZWin2.SetLoc( StatusWin.GetYSize(), 1);
+          ZWin3.SetLoc( StatusWin.GetYSize(), (ZWin2.GetXSize() + MainWin.GetXSize()));
 
-               !ZWin2.WinstyleOff(WS_SCROLL);
-               MainWin.SetColours(2, -1);
-  	         MainWin.SetSize((StatusWin.GetYSize() + ZWin2.GetYSize()), StatusWin.GetXSize() - (ZWin2.GetXSize() * 2));
-               MainWin.SetLoc(0, Pillar1.GetWidth());
+          !ZWin2.WinstyleOff(WS_SCROLL);
+          MainWin.SetColours(2, -1);
+          MainWin.SetSize((StatusWin.GetYSize() + ZWin2.GetYSize()), StatusWin.GetXSize() - (ZWin2.GetXSize() * 2));
+          MainWin.SetLoc(0, Pillar1.GetWidth());
                
 
-               !MainWin.SetMargins(Pillar1.GetWidth(),Pillar2.GetWidth());
+          !MainWin.SetMargins(Pillar1.GetWidth(),Pillar2.GetWidth());
                
               
-               StatusWin.SetColours(-1, -1);
-	         StatusWin.SetFontstyle(ST_roman);
-	         MainWin.SetFontstyle(ST_ROMAN);
-	],	
-    	Update 
-        [ charh charw width posa posb posc oldwin height ;
-	    !!   Default statusline routine
-	    !!   based on inform library DrawStatusLine
-	    oldwin = ActiveZWindow; 
+          StatusWin.SetColours(-1, -1);
+          StatusWin.SetFontstyle(ST_roman);
+          MainWin.SetFontstyle(ST_ROMAN);
+        ],
+        
+        Update 
+        [ charh charw width posa posb posc oldwin height;
+          !!   Default statusline routine
+          !!   based on inform library DrawStatusLine
+          oldwin = ActiveZWindow; 
           StatusWin.Activate();
           StatusWin.Erase();
           StatusWin.DrawPic(TitleBar, 1, -1);
           charh = StatusWin.GetCharHeight();
-	    charw = StatusWin.GetCharWidth();
+          charw = StatusWin.GetCharWidth();
  
           width = StatusWin.GetXSize();
           height = StatusWin.GetYSize();
           
-	    posa = (width / 3) / 2;
-	    posb = (width /3) *2;
+          posa = (width / 3) / 2;
+          posb = (width /3) *2;
           posc = (height / 4);
           
           StatusWin.SetColours(2,-1);
@@ -338,11 +338,11 @@ Object 	DavidZWinstyle
           1, 
           (statuswin.GetXSize()/2) - (NoSE.GetWidth()/2));
 
-	    StatusWin.SetColours(2,-1);
+          StatusWin.SetColours(2,-1);
           StatusWin.SetCursor(posc, posa);
           print (name) location;
-	    StatusWin.SetCursor(posc, posb);
-	    StatusWin.SetColours(2,-1);
+          StatusWin.SetCursor(posc, posb);
+          StatusWin.SetColours(2,-1);
           print (string) TIME__TX;
           LanguageTimeOfDay(sline1, sline2); 
           ZWin2.Activate();
@@ -363,17 +363,18 @@ Release 3; !This doesn't seem to work, but *it* is Release 2.
 #endif;
 
 Object questions "qs";
- [ QuerySub; PrintOrRun(noun, description);
- ];
+  
+[ QuerySub; PrintOrRun(noun, description);
+];
 
 
- [ Topic i;
-   switch(scope_stage)
-   {   1: rfalse;
-       2: objectloop (i has questionable) PlaceInScope(i); rtrue;
-       3: "At the moment, even the simplest questions confuse you.";
-   }
- ];
+[ Topic i;
+  switch(scope_stage)
+  {   1: rfalse;
+      2: objectloop (i has questionable) PlaceInScope(i); rtrue;
+      3: "At the moment, even the simplest questions confuse you.";
+  }
+];
 
 
  
@@ -405,16 +406,17 @@ box "~It's t*** that you'll *** meeting a g***"
 
 !-------------------------------------------------------------
 
-[ RestartSub; #ifdef TARGET_ZCODE;
-              @sound_effect 2; !bing.
-              #endif;
-              L__M(##Score);
-              PrintRank();
-              L__M(##Restart,1);
-  if          (YesOrNo()~=0)
-              { @restart;
-                L__M(##Restart,2);
-              }
+[ RestartSub; 
+  #ifdef TARGET_ZCODE;
+  @sound_effect 2; !bing.
+  #endif;
+  L__M(##Score);
+  PrintRank();
+  L__M(##Restart,1);
+  if (YesOrNo()~=0)
+  { @restart;
+    L__M(##Restart,2);
+  }
 ];
 
 [ TitlePage i;
@@ -424,10 +426,16 @@ box "~It's t*** that you'll *** meeting a g***"
    @erase_window -1; 
    #endif;
    print "^^^^^^^^^^^^^";
-   i = 0->33; if (i==0) i=80; i=(i-50)/2;
-   changefont(bold_font); font off; spaces(i);
+   i = 0->33; 
+   if (i==0) i=80; 
+   i=(i-50)/2;
+   changefont(bold_font); 
+   font off; 
+   spaces(i);
    print "                PERILOUS MAGIC^";
-   changefont(roman_font); print "^^"; spaces(i);
+   changefont(roman_font); 
+   print "^^"; 
+   spaces(i);
    print "         [Please press SPACE to begin.]^";
    font on;
    box "A rose-red city--'half as old as Time'!"
@@ -454,9 +462,6 @@ box "~It's t*** that you'll *** meeting a g***"
   #iftrue #version_number==6;
   V6Init(); !you can pass a ZWinstyle object to
             !V6Init to be used as the startup style.
-  
-  
-  
   #endif;
   #endif;
   SetTime( 60 * 17 + 00, 1);
@@ -590,7 +595,7 @@ ZPic Pillar2
   #ifdef TARGET_ZCODE;
 
   @erase_window -1;
-#endif;
+  #endif;
   print "^^^";
   Banner();
   changefont(bold_font);
@@ -616,9 +621,8 @@ ZPic Pillar2
   changefont(bold_font);
   print "^Important! Read this!^";
   changefont(roman_font);
-  "Despite it's small size, I put quite a bit of hard work into this game (especially those
-   stupid spell scrolls). It would be really, REALLY nice if you would email me at
-   Noslwop@@64Hotmail.com, and tell me what you thought of the game.";
+  "I put far more work into this game that is reasonable considering the size, mainly editing the code for the spell scrolls. I don't think I ever understood how I made them work.
+   If you have any comments or questions, you can contact me at marvin@@64frobnitz.co.uk, and I might even notice eventually.";
 
    
 
@@ -642,10 +646,10 @@ Statusline time;
 
 [ PrintTaskName ach;
   switch(ach)
-     {   0: "finding the old scroll";
-         1: "getting the new scroll past Gunther";
-         2: "triplicating the report";
-     }
+  {   0: "finding the old scroll";
+      1: "getting the new scroll past Gunther";
+      2: "triplicating the report";
+  }
 ];
 
 
@@ -848,7 +852,7 @@ Object gunther "Gunther"
                                "Gunther sees you trying to steal his scroll again, and pushes
                                 you back into the hallway.";
                              }
-                    ],	
+                    ],        
        life
        [; Attack: "No, that would be immature and boring.^
                    (If you had a weapon, it would just be immature, which is fine.)";
@@ -1432,13 +1436,8 @@ Object grue2 "g***" !Did anyone ever try this? Somehow I doubt it.
    }
  if (menu_item==5)
   { print "If you notice anything that appears to be a bug, have any ideas on
-           how I can improve this game, or just want to mention how brilliant the
-           game is, and how much of a genius I am, please email me at
-           Noslwop@@64Hotmail.Com. Despite the fact that this game was supposed
-           to just be something I did in a couple of hours, to take my mind off
-           another game I'm writing, I've been working on this one for a few
-           months now and I'm starting to find it more enjoyable to fix this
-           game than write the other one.";
+           how I can improve this game, feel free to email me at
+           marvin@@64frobnitz.co.uk.";
     rtrue;
   }   
      
@@ -1465,18 +1464,10 @@ Object grue2 "g***" !Did anyone ever try this? Somehow I doubt it.
     return 2;
     if (GiveHint("(7/8)  saying ~hello sailor~?")==1)
     return 2;
-    if (GiveHint("(8/8)  contacting the author at Noslwop@@64Hotmail.com to tell him what you thought of his game?")==1)
+    if (GiveHint("(8/8)  contacting the author at marvin@@64frobnitz.co.uk to tell him what you thought of his game?")==1)
     return 2;
     !#ifnot;
-    !"Have you tried...^^
-    !searching the junk a lot more?^
-    !zemdoring various objects, such as the junk, Gunther or yourself?^
-    !hitting Gunther with the pen?^
-    !throwing the pen at Gunther?^
-    !reading (rather than examining) the pen?^
-    !saying ~xyzzy~ or ~plugh~?^
-    !saying ~hello sailor~?^
-    !contacting the author at Noslwop@@64Hotmail.com to tell him what you thought of his game?";
+
     
     !#endif;
     
@@ -1494,7 +1485,7 @@ Include "Grammar";
   
 
 !----------------------------------------
-!Grammar for spells
+! Grammar for spells
 !----------------------------------------
 
 Verb "spells" "memory"             *                           -> Spells;
@@ -1510,11 +1501,11 @@ Verb meta "help" "hint" "hints"
           "information"            *                           -> Help;
 Extend "attack" first              * animate "with" weapon     -> AttackWithWeapon;
 Extend "read"   replace            * scope=spellscope          -> Read
-                                   * noun		       -> Read;
+                                   * noun                       -> Read;
 Extend "examine" first             * scope=spellscope          -> Read;          
-Verb "write" 			     * "report"                  -> WriteReport
+Verb "write"                       * "report"                  -> WriteReport
                                    * "report" "on" noun        -> WriteReportOn
- 				           * "on" noun                 -> WriteOn;
+                                   * "on" noun                 -> WriteOn;
 Verb "lift"                        * noun                      -> Take;
 Verb "hello" "hi"                  * "sailor"                  -> Sailor;
 
