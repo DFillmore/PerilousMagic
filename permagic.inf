@@ -1,0 +1,1520 @@
+!===============================================================================!
+! Perilous Magic - The Source Code!                                             !
+! Copyright 1999-2014 by David Fillmore.                                        !
+! This work is licensed under the Creative Commons Attribution-NonCommercial    !
+! 4.0 International License.                                                    !
+! To view a copy of this license, visit                                         !
+! http://creativecommons.org/licenses/by-nc/4.0/                                !
+! or send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain  !
+! View, California, 94041, USA.                                                 !    
+!===============================================================================!
+
+#ifndef TARGET_GLULX; !This only compiles if the target isn't glulx.
+Iffalse #version_number==6; !This only compiles if the target isn't v6.
+Constant Story "Perilous Magic";
+Constant Headline "^A Really Short Interactive Comic Tragedy.
+                   ^Copyright David Fillmore 1999^";
+endif;
+
+Iftrue #version_number==6; !And this only compiles if the version is v6;
+Constant Story "Perilous Magic";
+Constant Headline "^A Really Short Graphical Interactive Comic Tragedy.
+                   ^Copyright David Fillmore 1999^";
+endif;
+
+#endif;
+constant bold_font 1;
+constant roman_font 0;
+Attribute ungnustoable; !Means that the spell isn't gnustoable. There aren't any
+                        !spell book in the game, but it prints up a line about
+                        !the spell being long.
+Attribute weapon; !Can be used to attack things (mainly Gunther) with.
+Attribute questionable; !You can ask a question about this object. For instance:
+                        !WHAT IS A GRUE or WHO IS GUNTHER.
+
+!#ifndef TARGET_GLULX;
+!    Constant TARGET_ZCODE;
+!    Constant WORDSIZE 2;
+!#endif;
+
+#ifdef TARGET_GLULX;
+Constant Story "Perilous Magic";
+Constant Headline "^A Really Short Interactive Comical Tragic Glulx Port.
+                   ^Copyright David Fillmore 1999^";
+#endif;
+
+!This routine is so that I don't have to type out two different sets of styles,
+!one for glulx and one for zcode. Instead I just call changefont(bold_font);
+[ changefont font;
+  if (font == bold_font)
+  { #ifdef TARGET_ZCODE;
+     style bold;
+    #ifnot;
+     glk($0086, 4);
+    #endif;
+  }
+  if (font == roman_font)
+  { #ifdef TARGET_ZCODE;
+     style roman;
+    #ifnot;
+     glk($0086, 0);
+    #endif;
+  }
+];
+!Constant Grammar__Version = 2; !I tried this out, but it didn't make much 
+                                !difference. I'm still not sure what it does.
+
+Constant Max_score 3;
+Constant Number_Tasks 3;
+Constant Tasks_Provided;
+Constant Amusing_Provided;
+Array task_scores -> 1 1 1;
+Global the_spell_was = gnusto_spell;
+Replace StrongSub;
+#ifdef TARGET_ZCODE;
+iftrue #version_number==6;
+Include "V6Defs";
+endif;
+#endif;
+Replace NotifyTheScore;
+#ifdef TARGET_GLULX;
+Replace DrawStatusLine;
+#endif;
+Replace Keyboard;
+Replace KeyboardPrimitive;
+
+Include "Parser";
+Include "fkeys";
+
+[ NotifyTheScore i;
+  changefont(bold_font);
+  print "^[Your score has just gone ";
+  if (last_score > score)
+  { i=last_score-score;
+     #ifdef TARGET_ZCODE;
+     @sound_effect 2; ! Makes the game go bing when you lose a point. You can't
+                      ! lose points, but who cares?
+     #endif;
+    print "down";
+  }
+  else
+  { i=score-last_score;
+    #ifdef TARGET_ZCODE;
+    @sound_effect 1; ! Makes the game go bing in a different way, when you gain
+                     ! a point.
+    #endif;
+    print "up";
+  }
+  print " by "; EnglishNumber(i); print " point";
+  if (i>1) print "s"; print ".]^";
+  changefont(roman_font);
+];
+#ifdef TARGET_GLULX;
+[ DrawStatusLine width height posa posb; !I had to replace the status line for 
+                                         !glulx, because the version I used
+                                         !didn't print the time.
+    if (gg_statuswin == 0)
+        return;
+
+    glk($002F, gg_statuswin); ! set_window
+    StatusLineHeight(GG_STATUSWIN_SIZE);
+
+    glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
+    width = gg_arguments-->0;
+    height = gg_arguments-->1;
+    posa = width-26; posb = width-13;
+
+    glk($002A, gg_statuswin); ! window_clear
+
+    glk($002B, gg_statuswin, 1, 0); ! window_move_cursor
+    if (location == thedark) {
+        print (name) location;
+    }
+    else {
+        FindVisibilityLevels();
+        if (visibility_ceiling == location)
+            print (name) location;
+        else 
+            print (The) visibility_ceiling;
+    }
+
+    if (width > 66) {
+        glk($002B, gg_statuswin, posa-1, 0); ! window_move_cursor
+        print (string) SCORE__TX;
+        LanguageTimeOfDay(sline1, sline2);
+
+        
+!        print (string) MOVES__TX, sline2;
+    }
+    if (width > 53 && width <= 66) {
+        glk($002B, gg_statuswin, posb-1, 0); ! window_move_cursor
+        print sline1, "/", sline2;
+    }
+
+    glk($002F, gg_mainwin); ! set_window
+];
+#endif;
+
+! This is what happens when you swear. Most of you won't have found this, because
+! of course no one ever swears at a computer game. I put this in when I realised
+!  that the game had been printing "Real adventures do not used such language.",
+! and your character isn't an adventurer. I decided to use the text from all
+! the other Zork games I knew of, editing them so they made sense. Sort of.
+! I was going to use the replies from Dungeon as well, but that required me to
+! swear back at the player, something I'm not prepared to do unless they send me
+! a really nasty e-mail.
+[ StrongSub; 
+  switch(random(18))
+  { 1: "Moral turpitude is grounds for removal from your job!"; !Spellbreaker.
+    2: print "You suddenly feel less intelligent.^"; !Beyond Zork. This is my favourite.
+       changefont(bold_font);
+       print " [Your intelligence has not been affected.]^";
+       changefont(roman_font);
+       rtrue;
+    3: "Such language from a civil servant!"; !Enchanter and Sorcerer.
+    4: "[What charming language.]"; !Wishbringer.
+    5: "[Computers aren't impressed by naughty words.]"; !Wishbringer.
+    6: "[Grow up.]"; !Wishbringer
+    7: "[Computers aren't impressed by naughty words!]"; !Zork Zero.
+    8: "[What charming language!]"; !Zork Zero.
+    9: "[You ought to be ashamed of yourself!]"; !Zork Zero.
+    10: "[Hey, save that talk for the locker room!]"; !Zork Zero.
+    11: "[Step outside and say that!]"; !Zork Zero.
+    12: "[And so's your old man!]"; !Zork Zero.
+    13: "Such language in a high-class establishment like this!"; !The Zork Trilogy.
+    14: "Real civil servants do not use such language."; !Balances and Zork: The Undiscovered Underground.
+    15: "This is a family game. Play Nice."; !Enlightenment.
+    16: "Such language from a civil servant such as yourself! The ground rumbles suddenly!"; !SpiritWrak.
+    17: "You swear sulphurously to yourself."; !Zork: A Troll's Eye View.
+    18: "Such language betrays your low intelligence."; !Beyond Zork.
+  }
+];
+! I had to copy out all this, just to change one message.
+Object LibraryMessages 
+  with before
+  [ n; n = lm_n; 
+  Miscellany: if (n==1) "(considering the first sixteen objects only)^";
+              if (n==2) "Nothing to do!";
+              if (n==3) { print " You have died "; rtrue; }
+              !And here is that message.
+              if (n==4) { print " You have caused a major historical incident "; rtrue; }
+              if (n==5)
+              {   print "^Would you like to RESTART, RESTORE a saved game";
+                  if (TASKS_PROVIDED==0)
+                      print ", give the FULL score for that game";
+                  if (deadflag==2 && AMUSING_PROVIDED==0)
+                  { print ", see some suggestions for AMUSING things to do";
+                    box "See how much wood or"
+                        "how great a forest"
+                        "a tiny spark can set ablaze"
+                        ""
+                        "The Letter of James, III. v";
+                  }
+                  " or QUIT?"; }
+              if (n==6) "[Your interpreter does not provide ~undo~.  Sorry!]";
+              if (n==7) "~Undo~ failed.  [Not all interpreters provide it.]";
+              if (n==8) "Please give one of the answers above.";
+              if (n==9) "^It is now pitch dark in here!";
+              if (n==10) "Excuse me?";
+              if (n==11) "[You can't ~undo~ what hasn't been done!]";
+              if (n==12) "[Can't ~undo~ twice in succession. Sorry!]";
+              if (n==13) "[Previous turn undone.]";
+              if (n==14) "Sorry, that can't be corrected.";
+              if (n==15) "Think nothing of it.";
+              if (n==16) "~Oops~ can only correct a single word.";
+  ];
+Replace QuitSub;
+Replace RestartSub;
+Include "VerbLib";
+#ifdef TARGET_ZCODE;
+iffalse #version_number==6;
+Release 11;
+endif;
+
+iftrue #version_number==6;
+Replace V6Init;
+Include "V6";
+[ V6Init style;
+!   pretty_flag = 0;
+    MainWin.Activate();
+    #ifndef NOZPIC;
+    ZPicInit();
+    #endif;
+    MachineInit();
+    ! needed to prevent calling of (-1).Finish()
+    ActiveZWinStyle=DavidZWinStyle;
+    if (style == 0)
+    	style = DavidZWinstyle;
+    style.Activate();
+    @erase_window -1;
+    give ActiveZWinstyle ~general;    
+];
+
+
+Release 2;
+
+Object 	DavidZWinstyle
+   class ZWinstyle,
+   with Init 
+        [ tmp; tmp = TitleBar.GetHeight();
+               !ZWin4.SetColours(-1, c_white);
+               @split_window tmp;
+               StatusWin.SetSize(TitleBar.GetHeight(), TitleBar.GetWidth());
+               ZWin2.SetSize(Pillar1.GetHeight(), Pillar1.GetWidth());
+               ZWin3.SetSize(Pillar2.GetHeight(), Pillar2.GetWidth());
+               ZWin2.SetLoc( StatusWin.GetYSize(), 1);
+               ZWin3.SetLoc( StatusWin.GetYSize(), (ZWin2.GetXSize() + MainWin.GetXSize()));
+
+               !ZWin2.WinstyleOff(WS_SCROLL);
+               MainWin.SetColours(2, -1);
+  	         MainWin.SetSize((StatusWin.GetYSize() + ZWin2.GetYSize()), StatusWin.GetXSize() - (ZWin2.GetXSize() * 2));
+               MainWin.SetLoc(0, Pillar1.GetWidth());
+               
+
+               !MainWin.SetMargins(Pillar1.GetWidth(),Pillar2.GetWidth());
+               
+              
+               StatusWin.SetColours(-1, -1);
+	         StatusWin.SetFontstyle(ST_roman);
+	         MainWin.SetFontstyle(ST_ROMAN);
+	],	
+    	Update 
+        [ charh charw width posa posb posc oldwin height ;
+	    !!   Default statusline routine
+	    !!   based on inform library DrawStatusLine
+	    oldwin = ActiveZWindow; 
+          StatusWin.Activate();
+          StatusWin.Erase();
+          StatusWin.DrawPic(TitleBar, 1, -1);
+          charh = StatusWin.GetCharHeight();
+	    charw = StatusWin.GetCharWidth();
+ 
+          width = StatusWin.GetXSize();
+          height = StatusWin.GetYSize();
+          
+	    posa = (width / 3) / 2;
+	    posb = (width /3) *2;
+          posc = (height / 4);
+          
+          StatusWin.SetColours(2,-1);
+          if (location.nw_to == 0)
+          statuswin.DrawPic(NoNW, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoNW.GetWidth()/2));
+
+          if (location.n_to == 0) 
+          statuswin.DrawPic(NoNorth, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoNorth.GetWidth()/2));
+
+          if (location.ne_to == 0) 
+          statuswin.DrawPic(NoNE, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoNE.GetWidth()/2));
+
+          ! Second line
+          if (location.w_to == 0)
+          statuswin.DrawPic(NoWest, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoWest.GetWidth()/2));
+          if (location.e_to == 0) 
+          statuswin.DrawPic(NoEast, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoEast.GetWidth()/2));
+
+          ! Third line
+          if (location.sw_to == 0)
+          statuswin.DrawPic(NoSW, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoSW.GetWidth()/2));
+          
+          if (location.s_to == 0)
+          statuswin.DrawPic(NoSouth, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoSouth.GetWidth()/2));
+          
+          if (location.se_to == 0)
+          statuswin.DrawPic(NoSE, 
+          1, 
+          (statuswin.GetXSize()/2) - (NoSE.GetWidth()/2));
+
+	    StatusWin.SetColours(2,-1);
+          StatusWin.SetCursor(posc, posa);
+          print (name) location;
+	    StatusWin.SetCursor(posc, posb);
+	    StatusWin.SetColours(2,-1);
+          print (string) TIME__TX;
+          LanguageTimeOfDay(sline1, sline2); 
+          ZWin2.Activate();
+          ZWin2.Erase();
+          ZWin2.DrawPic(Pillar1, 1, -1);
+          ZWin3.Activate();
+          ZWin3.Erase();
+          ZWin3.DrawPic(Pillar2, 1, -1);
+          MainWin.Activate();
+          MainWin.SetColours(2,-1);
+
+];
+endif;
+#endif;
+#ifdef TARGET_GLUXL;
+
+Release 3; !This doesn't seem to work, but *it* is Release 2.
+#endif;
+
+Object questions "qs";
+ [ QuerySub; PrintOrRun(noun, description);
+ ];
+
+
+ [ Topic i;
+   switch(scope_stage)
+   {   1: rfalse;
+       2: objectloop (i has questionable) PlaceInScope(i); rtrue;
+       3: "At the moment, even the simplest questions confuse you.";
+   }
+ ];
+
+
+ 
+Verb "what" "who"
+                * "is"  scope=Topic              -> Query
+                * "was" scope=Topic              -> Query;
+
+!I doubt anyone got this to print up. Who's going to type "WHAT IS A G***"?
+!Also, it doesn't work properly in the z6 version.
+[ Gruebox;
+box "~It's t*** that you'll *** meeting a g***"
+    " Your death will be g***some, g***lling and grim."
+    " So when off to fight, take plenty of light"
+    " And make sure its pickings are slim.~"
+    ""
+    "This was an unpaid advertisement for ~Enlightenment~"
+    "Thank you for your patience.";
+];
+
+
+
+[ QuitSub; #ifdef TARGET_ZCODE;
+           @sound_effect 2; !bing.
+           #endif;
+           L__M(##Score);
+           PrintRank();
+           L__M(##Quit,2); if (YesOrNo()~=0) quit;
+];
+
+!-------------------------------------------------------------
+
+[ RestartSub; #ifdef TARGET_ZCODE;
+              @sound_effect 2; !bing.
+              #endif;
+              L__M(##Score);
+              PrintRank();
+              L__M(##Restart,1);
+  if          (YesOrNo()~=0)
+              { @restart;
+                L__M(##Restart,2);
+              }
+];
+
+[ TitlePage i;
+   #ifdef Target_glulx;
+   glk($002A, gg_mainwin); 
+   #ifnot;
+   @erase_window -1; 
+   #endif;
+   print "^^^^^^^^^^^^^";
+   i = 0->33; if (i==0) i=80; i=(i-50)/2;
+   changefont(bold_font); font off; spaces(i);
+   print "                PERILOUS MAGIC^";
+   changefont(roman_font); print "^^"; spaces(i);
+   print "         [Please press SPACE to begin.]^";
+   font on;
+   box "A rose-red city--'half as old as Time'!"
+       ""
+       "-- Rev. John William Burgon, ~Petra~ 1. 132";
+   #ifdef Target_glulx;
+   KeyCharPrimitive();
+   !do { KeyCharPrimitive(i); } until (i == 32 or 10 or 13);
+   #ifnot;
+   do { @read_char 1 0 0 i; } until (i==32 or 10 or 13);
+   #endif;
+
+   #ifdef Target_glulx;
+   glk($002A, gg_statuswin); 
+   glk($002A, gg_mainwin); 
+   #ifnot;
+   @erase_window -1; 
+   #endif;
+];
+
+[ Initialise s;
+  SetupFKeys();
+  #ifdef TARGET_ZCODE;
+  #iftrue #version_number==6;
+  V6Init(); !you can pass a ZWinstyle object to
+            !V6Init to be used as the startup style.
+  
+  
+  
+  #endif;
+  #endif;
+  SetTime( 60 * 17 + 00, 1);
+  location = your_cubicle;
+  move pen to player;
+  StartDaemon(pen);
+  objectloop(s ofclass spellscroll)
+  { s.spell_name = child(s);
+    startdaemon(s);
+  }
+  TitlePage();
+  move new_scroll to gundesk;
+  "^^^^^It's 5:00 now, and you have to get your work done by 5:30. Luckily, you
+        only have one more job: write out a report in triplicate. You've just
+        finished one, but now you've run out of paper!^";
+];
+#ifdef TARGET_ZCODE;
+iftrue #version_number==6;
+
+ZPic TitleBar
+private picnum 5;
+
+ZPic NoNorth
+  private picnum 17;
+
+ZPic NoNE
+  private picnum 18;
+
+ZPic NoEast
+  private picnum 19;
+
+ZPic NoSE
+  private picnum 20;
+
+ZPic NoSouth
+  private picnum 21;
+
+ZPic NoSW
+  private picnum 22;
+
+ZPic NoWest
+  private picnum 23;
+
+ZPic NoNW
+  private picnum 24;
+
+ZPic Pillar1
+  private picnum 497;
+
+ZPic Pillar2
+  private picnum 498;
+
+  endif;
+#endif;
+
+
+[ GiveHint hint keypress;
+   print (string) hint; new_line; new_line;
+   #ifdef TARGET_ZCODE;
+   @read_char 1 0 0 keypress;
+   if (keypress == 'H' or 'h') rfalse;
+   #ifnot;
+   if (KeyCharPrimitive() == 104 or 72) rfalse;
+   #endif;
+   rtrue;
+];
+
+
+
+
+
+
+!-----------------------------------------------
+
+[ PrintRank;
+  print ", earning you the rank of ";
+  switch(score)
+  {   0 to 2:     "civil servant.";
+      3:          "Pyromaniac Extraordinaire.";
+  }
+];
+
+
+[ DeathMessage;
+  if (deadflag == 3)
+  print "You are fired";
+  if (deadflag == 4)
+  print "You are burned to a crisp";
+  if (deadflag == 5)
+  print "You are buried alive";
+  if (deadflag == 6)
+  print "You are fired ***^    *** You are fired ***^    *** You are fired";    
+  rtrue;
+];
+
+[ WriteReportSub;
+  if (pen notin player)
+  "You don't have a pen!";
+  if (paper notin location)
+  "You don't have anything to write it on!";
+];
+
+[ WriteReportOnSub;
+  if (noun ofclass spellscroll)
+  "No, you'd need a clean sheet of paper.";
+  if (noun == junk) 
+  "No, you'd need a clean sheet of paper.";
+  "You can't write a report on that!";
+];
+
+[ WriteOnSub;
+  if (noun == gunther)
+  "I don't think he'd appreciate that.";
+  if (noun == player)
+  "That would hurt.";
+  "Vandalism of company property could get you fired.";
+];
+  
+    
+
+[ ReadSub;
+  <<Examine noun>>;
+];
+
+[ XyzzySub;
+  "A hollow voice says 'Cretin'.^
+   (Probably your boss)";
+];
+
+[ CreditsSub;
+  #ifdef TARGET_ZCODE;
+
+  @erase_window -1;
+#endif;
+  print "^^^";
+  Banner();
+  changefont(bold_font);
+  print "^Beta-Testers^";
+  changefont(roman_font);
+  print "Chad Schultz^
+         Jonadab the Unsightly One^
+         Kelly M.^
+         Mark Silcox^^";
+  changefont(roman_font);
+  print "Other people who spotted bugs or gave suggestions^";
+  changefont(roman_font);
+  print "Randy Cox^";
+  print "ct^";
+  print "Francesco Bova^";
+  print "Martin Braun^";
+  #ifdef TARGET_ZCODE;
+  #iftrue #version_number==6;
+  print "Jason C. Penney^";
+  #endif;
+  #endif;
+
+  changefont(bold_font);
+  print "^Important! Read this!^";
+  changefont(roman_font);
+  "Despite it's small size, I put quite a bit of hard work into this game (especially those
+   stupid spell scrolls). It would be really, REALLY nice if you would email me at
+   Noslwop@@64Hotmail.com, and tell me what you thought of the game.";
+
+   
+
+];
+
+Verb "xyzzy" * -> Xyzzy;
+Verb "plugh" * -> Xyzzy;
+Verb "credits" * -> Credits;
+    
+
+
+
+
+  
+    
+
+Statusline time;
+
+
+
+
+[ PrintTaskName ach;
+  switch(ach)
+     {   0: "finding the old scroll";
+         1: "getting the new scroll past Gunther";
+         2: "triplicating the report";
+     }
+];
+
+
+Object pen "pen"
+   with name "pen",
+        t 0,
+        description "A simple blue ball-point pen.",
+        
+        before
+        [; Read: "Inscribed on one side of the pen, in very small letters,
+                  is the following: ~FMPC: Hello, Writer!~^
+                  On the other side is written ~JTUO: Better?~";
+        ],
+         
+        daemon
+        [; self.t++;
+           if (self.t == 30)
+           { deadflag = 3;
+             "You fail to triplicate the report on time.";
+           }
+        ],
+   has weapon;
+
+Object your_cubicle "Your Cubicle"
+  with description "Vast piles of junk fill every corner of this cramped
+                    cubicle, but you're only interested in one thing: 
+                    the report.^^
+                    Somewhere to the east, behind a particularly immense
+                    pile of old papers, is the exit.",
+       out_to hallway,
+       e_to hallway,
+  has light;
+
+Object -> desk "desk"
+  with name "desk",
+       before
+       [; Search: <<Search junk>>;
+       ],
+       description "Actually, you can barely see the desk under all the
+                    junk, but you're pretty certain it's there. It was
+                    oak, if you remember correctly.",
+  has supporter scenery;
+
+Object -> -> report "report"
+  with name "report",
+       description "It's the report your supposed to finish by 5:30.",
+       before
+       [; Take: "You should leave it here. If you take it somewhere, you'll only
+                 lose it.";
+       ],
+  has scenery;
+
+Object -> -> junk "junk"
+  with name "junk" "clutter" "paper" "papers" "rubbish" "pile" "of",
+       description "It's a load of junk. There might be something interesting in there though.",
+       x,
+       lamp,
+       sword,
+       civilpaper,
+       before
+       [ i  ; Search: if (self.x==0)
+                      { move old_scroll to player;
+                        PronounNotice(old_scroll);
+                        achieved(0);
+                        self.x++;
+                        "Sifting the the piles of junk, you come across an old scroll you
+                         were supposed to do something with weeks ago. You take it.";
+                      }
+                      else
+                      { if (random(10) > 3) "You don't find anything interesting.";
+                        switch(random(3))
+                        { 1: if (self.lamp==0)
+                             { self.lamp++;
+                               move brasslamp to player;
+                               PronounNotice(brasslamp);
+                               "Sifting through the piles of junk, you come across an
+                                old brass lantern. Now how did that get in there?";
+                             }
+                             else
+                             "You don't find anything interesting.";
+                          2: if (self.sword==0)
+                             { self.sword++;
+                               move elvishsword to player;
+                               PronounNotice(elvishsword);
+                               "Sifting through the piles of junk, you come across a
+                                sword of Elvish workmanship. Who put that there?";
+                             }
+                             else
+                             "You don't find anything interesting.";
+                          3: if (self.civilpaper==0)
+                             { self.civilpaper++;
+                               move newspaper to player;
+                               PronounNotice(newspaper);
+                               print "Sifting through the piles of junk, you come across a copy
+                                of the U.S. News and Dungeon Report dated ";
+                               
+                               #ifdef TARGET_ZCODE; !This prints the date of compilation if the target is ZCode.
+                               for (i=22:i<24:i++) print (char) 0->i;
+                               print "/";
+                               for (i=20:i<22:i++) print (char) 0->i;
+                               print "/";
+                               for (i=18:i<20:i++) print (char) 0->i;
+                               #ifnot; !This prints the date of compilation if the target is Glulx.
+                               for (i=4:i<6:i++) print (char) 54->i;
+                               print "/";
+                               for (i=2:i<4:i++) print (char) 54->i;
+                               print "/";
+                               for (i=0:i<2:i++) print (char) 54->i;
+                               #endif;
+                               new_line;
+                               rtrue;
+                             }
+                             else
+                             "You don't find anything interesting";
+
+                        }  
+                      }    
+       ],
+  has scenery;
+
+Object paper "pile of paper";
+   
+Object elvishsword "sword"
+   with name "sword" "elvish",
+   has weapon;
+   
+Object brasslamp "lamp"
+   with name "lamp" "lantern" "brass",
+        before
+        [; SwitchOn: "It appears to have run out.";
+        ],
+   has switchable ~on;
+
+Object newspaper "newspaper"
+  with name "paper" "newspaper",
+       description [ i; changefont(bold_font);
+                        print "      U.S. News and Dungeon Report^ ";
+                        changefont(roman_font);
+                        #ifdef TARGET_ZCODE; !The date for ZCode.
+                        for (i=22:i<24:i++) print (char) 0->i;
+                        print "/";
+                        for (i=20:i<22:i++) print (char) 0->i;
+                        print "/";
+                        for (i=18:i<20:i++) print (char) 0->i;
+                        #ifnot; !The date for Glulx.
+                        for (i=4:i<6:i++) print (char) 54->i;
+                        print "/";
+                        for (i=2:i<4:i++) print (char) 54->i;
+                        print "/";
+                        for (i=0:i<2:i++) print (char) 54->i;
+                        #endif;
+
+
+                        print "^^Edited some text a bit. No big changes.^";
+                        #ifdef TARGET_ZCODE;
+                        #iftrue #version_number==6;
+                        print "This gamefile is equivalent to release 11 of Perilous Magic, but
+                               it uses Zork Zero's graphics.";
+                        #endif;
+                        #endif;
+                        new_line;
+                        rtrue;
+                           
+                   ];
+    
+
+Object hallway "Hallway"
+  with description "You're in a long hallway lined with cubicles just like yours.
+                    Your cubicle is to the west, and to the east is Gunther's
+                    one.",
+       w_to your_cubicle,
+       e_to gun_cubicle,
+       n_to "You've got to finish triplicating that report before you go home!",
+       s_to "You've got to finish triplicating that report before you go home!",
+  has light;
+
+Object gunther "Gunther"
+  with name "gunther" "gunther?" "foobar", ! Look! Gunther has a last name! Gunther Foobar.
+       initial "Gunther is here, looking through his reports to see if you stole anything.",
+       parse_name [; return 0; ],
+       description "Gunther is smart, efficent, and comletely humourless. He's
+                    had a grudge against you ever since you accidently knocked
+                    a ~fooble~ potion into his coffee.",
+       react_before [; Give: if (noun notin player)
+                             "You can't see any such thing.";
+                             if (noun ofclass spellscroll)
+                             { gun_cubicle.done = 3;
+                               move noun to gundesk;
+                               if (noun == old_scroll && new_scroll in player) achieved(1);
+                               PlayerTo(hallway, 1);
+                               give gunther general;
+                               "He snatches it out of your hand and pushes you into the hallway.";
+                             }
+                             else
+                             "~I don't want that.~";
+                       Take: if (noun ofclass spellscroll && gunther has general)
+                             { PlayerTo(hallway, 1);
+                               move noun to gundesk;
+                               gun_cubicle.done = 3;
+                               "Gunther sees you trying to steal his scroll again, and pushes
+                                you back into the hallway.";
+                             }
+                    ],	
+       life
+       [; Attack: "No, that would be immature and boring.^
+                   (If you had a weapon, it would just be immature, which is fine.)";
+          Kiss: "Gunther isn't your type.";
+          ThrowAt: if (noun == elvishsword) "You can get in trouble for that kind of thing.";
+                   if (noun == brasslamp) 
+                   { print "You throw the lamp at Gunther, and it bounces off his head with a satifying
+                            clang. You run out of his cubicle";
+                     move brasslamp to location;
+                     
+                     if (new_scroll in player)
+                     { move new_scroll to location;
+                       print ", dropping the scroll in your hurry.^";
+                     }
+                     else print ".^";
+                     give gunther general;
+                     PlayerTo(hallway);
+                     rtrue;
+                   }
+                   if (noun == pen) "You could put an eye out doing that!";
+          Show: if (noun ofclass spellscroll)
+                "Gunther glares at you. ~Give it back!~";
+                <<Give gunther noun>>;
+          Ask: print "Gunther glares at you. ";
+               switch(second)
+               { 'new', 'scroll':
+                 "~I'm going to need that tommorow, I've got lots of work to do!~";
+                 'pile', 'of', 'reports':
+                 "~Leave them alone!~";
+               }
+               "How should I know? Go away!";
+       ],   
+ 
+  has animate proper questionable;
+
+Object gun_cubicle "Gunther's Cubicle"
+  with description [ ; print "This is Gunther's cubicle. Unlike yours, it's neat, clean and
+                              everything is in place.";
+                   ],
+       done 0,
+       out_to [; <<Go W_obj>>;],
+       w_to [; if (self.done == 0 && new_scroll in player)
+               { self.done = 1;
+                 move gunther to self;
+                 PronounNotice(gunther);
+                 "Gunther walks in and notices you holding his scroll. He demands it back.";
+               }
+               if (self.done == 1)
+               "Gunther blocks your way.";
+               if (new_scroll notin player || self.done == 3)
+               return hallway;
+            ],
+
+  has light;   
+
+Object -> gundesk "desk"
+  with name "desk",
+       description "It's just a desk. There's not much interesting about it.",
+  has supporter scenery;
+
+
+Object -> -> reports "pile of reports"
+  with name "reports" "pile" "of",
+       before
+       [; Take: "I think Gunther would notice.";
+       ],
+       description "You spent all day looking through reports, you don't
+                    want to read Gunther's too!";
+
+! ----------------------------------------------------------------------------
+!   Now the whole spell-casting system
+! ----------------------------------------------------------------------------
+! The spellcasting system is a modified version of the one from Balances.
+! I had to change it to enable the player to cast spells directly from
+! spell scrolls.
+Attribute known_about;                 ! Player has seen this spell somewhere
+
+
+Attribute is_spell;
+Class  Spell
+  with name "spell" "spells", article "the",
+       number 0,
+       word_name
+       [;  print (address) (self.&name)-->0;
+       ],
+       short_name
+       [;  self.word_name(); print " spell"; give self known_about; rtrue;
+       ],
+       specification
+       [;  self.short_name();
+           print ": ", (string) self.purpose;
+       ],
+       before
+       [;  Examine: self.specification(); ".";
+       ],
+  has  is_spell;
+
+Object memory
+  with capacity 5,
+       number_known 1,
+       describe_contents
+       [ i j k;
+           objectloop (i in self) if (i.number==100) j++;
+           if (j>0)
+           {   print "The ";
+               objectloop (i in self)
+                   if (i.number==100)
+                   {   k++; i.word_name();
+                       if (k==j-1) print " and ";
+                       if (k<j-1) print ", ";
+                   }
+               if (j==1) print " spell is"; else print " spells are";
+               print " yours forever.  Other than that, y";
+           }
+           else print "Y";
+           print "ou have ";
+           j=0; k=0;
+           objectloop (i in self) if (i.number<99) j++;
+           if (j>0)
+           {   print "the ";
+               objectloop (i in self)
+                   if (i.number<99)
+                   {   k++;
+                       print (name) i;
+                       if (i.number==2) print " (twice)";
+                       if (i.number==3) print " (thrice)";
+                       if (i.number==4) print " (four times)";
+                       if (i.number>=5) print " (many times)";
+                       if (k==j-1) print " and ";
+                       if (k<j-1) print ", ";
+                   }
+           }
+           else print "no spells";
+           " memorised. After a few years, most civil servants lose the brain power nessecary to learn them.
+            However, you could probably cast one straight from a scroll."; !If you steal my system, you'll probably want to edit this.
+       ],
+       learn_spell
+       [ sp;
+           if (sp.number==100) "You always know that spell.";
+           print "Using your best study habits, you commit the ";
+           sp.word_name();
+           print " spell to memory";
+           if (sp notin self) sp.number=0;
+           move sp to self;
+           self.number_known++;
+           sp.number++;
+           if (sp.number==1) print ".";
+           if (sp.number==2) print " once again.";
+           if (sp.number==3) print " a third time.";
+           if (sp.number>3) print " yet another time.";
+           if (self.number_known <= self.capacity) { new_line; rtrue; }
+           self.forget_spell(sibling(child(self)));
+           "  You have so much buzzing around in your head, though,
+              that it's likely something may have been forgotten
+              in the shuffle.";
+       ],
+       forget_spell
+       [ sp;
+           if (sp notin self || sp.number==100) rtrue;
+           self.number_known--;
+           sp.number--;
+           if (sp.number==0) remove sp;
+           rtrue;
+       ];
+!There is no way to get the gnusto spell, but taking it out makes the compiler
+!complain. The same is true of alot of the stuff in the spell system. I
+!just couldn't be bothered to go through it all and edit it so it only contained
+!what I needed. I'm lazy.
+Spell gnusto_spell
+  with name "gnusto",
+       purpose "copy a scroll into your spell book",
+       magic
+       [ i a_book;
+            if (second ofclass SpellBook)
+               "Unlike scrolls, spell books are magically guarded against
+                the 'theft' of their lore.";
+            if (second==0 || ~~(second ofclass spellScroll))
+               "Your spell fizzles vaguely out.";
+            if (second notin player)
+                "A gnusto spell would require close scrutiny of the scroll
+                 it is to copy: which you do not seem to be holding.";
+            objectloop (i in player)
+                if (i ofclass SpellBook) a_book=i;
+            if (a_book==0)
+                "Your spell fails, as you have no spell book.";
+            i=child(second);
+            if (i==0 || ~~(i ofclass Spell))
+            {   print_ret "Your spell fails, as ", (the) second,
+                   " is illegible.";
+            }
+            a_book.learn_spell(i); remove second;
+            print_ret
+               "Your spell book begins to glow softly.  Slowly, ornately,
+                the words of ", (the) i, " are inscribed,
+                glowing even more brightly then the book itself. 
+                The book's brightness fades, but the spell remains! 
+                However, the scroll on which it was written vanishes as
+                the last word is copied.";
+       ];
+
+Class SpellBook
+  with array_of_spells 0 0 0 0  0 0 0 0  0 0 0 0  0 0 0 0,
+       capacity 16,
+       learn_spell
+       [ sp p i;
+              p = self.&array_of_spells;
+              for (i=0:i<self.capacity && (p-->i)~=0:i++) ;
+              if (i==self.capacity) rtrue;
+              p-->i = sp;
+       ],
+       before
+       [; Open, Close:
+              print_ret
+              (The) self, " is always open to the right place, but it
+              is also always closed. This eliminates tedious leafing and
+              hunting for spells.  Many lives have been saved by this
+              magical innovation.";
+          Attack:
+              print_ret "When you are done, ", (the) self, " remains unmarred.";
+       ],
+       after
+       [ p i j; Examine:
+              p = self.&array_of_spells;
+              for (i=0:i<self.capacity && (p-->i)~=0:i++)
+              {   j=p-->i; <Examine j>;
+              }
+              rtrue;
+       ];
+
+!The class "Scroll" was changed to "SpellScroll" because V6Lib uses an object or
+!class or property or something called "Scroll" somewhere in its code.
+Class SpellScroll
+  with parse_name
+       [ i j k; j=-1;
+              if (self has general)
+              {   if (child(self)~=0 && child(self) ofclass Spell)
+                      j=(child(self).&name)-->0; else j='illegible';
+              }
+              for (::)
+              {   k=NextWord();
+                  if (k=='scrolls') parser_action=##PluralFound;
+                  if ((k=='scrolls' or 'scroll' or j) || k==(self.&name)-->0)
+                      i++;
+                  else return i;
+              }
+       ],
+       
+       react_before
+       [; Read, Examine: move self.spell_name to self;
+       ],
+       before
+       [ i; Examine:
+            i=child(self);
+            give self general;
+            if (i==0 || ~~(i ofclass Spell))
+                "The scroll has faded, and you cannot read it.";
+            print "The scroll reads ~"; i.specification(); print "~.^";
+            if (i has ungnustoable) 
+            "The spell seems very long and extremely complicated.";
+            else
+            rtrue;
+       ],
+       spell_name 0,
+       daemon
+       [; if (self in player)
+          { move self.spell_name to memory;
+            self.spell_name.number = 99;
+          }
+          else 
+          { move self.spell_name to self;
+            self.spell_name.number = 0;
+          }
+       ],
+       invent
+       [;   if (inventory_stage==2 && self has general)
+            if (self.spell_name == 0) print " (which is illegible)";
+            else print " (of ", (the) self.spell_name, ")";
+            !{   if (child(self)==0 || ~~(child(self) ofclass Spell))
+            !        print " (which is illegible)";
+            !    else
+            !    {   print " (of ", (the) child(self), ")"; }
+            !}
+       ];
+
+[ ReadableSpell i j k;
+  if (scope_stage==1)
+  {   if (action_to_be==##Examine) rfalse;
+      rtrue;
+  }
+  if (scope_stage==2)
+  {   objectloop (i in player)
+          if (i ofclass SpellBook)
+          {   for (k=0:k<i.capacity && (i.&array_of_spells)-->k~=0:k++)
+              {   j=(i.&array_of_spells)-->k; PlaceInScope(j);
+              }
+          }
+      rtrue;
+  }
+  ! No need for scope_stage 3 (the error stage), because our
+  ! ParserError routine handles that case instead
+];
+
+[ SpellsSub; memory.describe_contents(); ];
+
+[ LearnSub; if (location==thedark)
+                print "(The magic writing of the spells casts enough light
+                        that you can read them.)^";
+            memory.learn_spell(noun);
+];
+
+[ CastOneSub; <Cast the_spell_was noun>; ];
+
+[ CastSub s;
+  the_spell_was = noun; memory.forget_spell(noun);
+  objectloop(s ofclass spellscroll && s.spell_name == the_spell_was)
+  { remove s;
+    print "As you cast the spell, ", (the) s," vanishes!^";
+  }
+  if (second ~= 0)
+  {   ResetVagueWords(second);                     ! Set "it", "him", "her"
+      if (second provides before
+          && second.before() ~= 0) return;         ! Run before routine(s)
+  }
+  if (noun.magic() ~= 0) return;
+  "Nothing happens.";
+];
+
+[ InScope i;
+  if (verb_word=='c,cast' or 'cast')
+      objectloop (i in memory
+      !Without the following bit of code, casting from scrolls doesn't work 
+      !properly. I can't remember why, but it doesn't.
+      || (parent(i) ofclass spellscroll && parent(i) in player)) 
+      PlaceInScope(i);
+  rfalse;
+];
+
+[ ParserError x i flag vb;
+  if (etype==VERB_PE or ASKSCOPE_PE)
+  {   if (etype==ASKSCOPE_PE)
+      {   if (verb_word=='cast') vb=1;
+          if (verb_word=='learn' or 'memorise' or 'memorize') vb=2;
+          if (verb_word=='copy') vb=3;
+          if (vb==0) { etype=CANTSEE_PE; rfalse; }
+      }
+      wn=verb_wordnum; if (vb~=0) wn++;
+      x=NextWordStopped();
+      #ifdef TARGET_ZCODE;
+      for (i=player+1:i<=top_object:i++)
+      #ifnot; ! TARGET_GLULX
+       objectloop (i)
+      #endif; ! TARGET_
+          if (i ofclass Spell && Refers(i,x)==1
+              && i has known_about) flag=1;
+      if (flag==1)
+      {   if (vb==0 or 1)
+             "You haven't got that spell committed to memory.  [Type ~spells~
+              to see what you do remember.]";
+          if (vb==2)
+             "Your training is such that you can only memorise such a spell
+              with the aid of a spell book containing it.";
+          if (vb==3)
+             "You have no text of that spell to copy.";
+      }
+      if (vb==1)
+         "After a few years, most civil servants lose the brain power nessecary to learn spells.
+          However, you could probably cast one straight from a scroll.";
+      if (vb==2 or 3)
+         "After a few years, most civil servants lose the brain power nessecary to learn spells.
+          However, you could probably cast one straight from a scroll.";
+  }
+  rfalse;
+];
+
+[ ChooseObjects obj code;
+  if (code<2)
+  { if (obj in player)
+    return 2;
+    rfalse;
+  }
+  if (action_to_be==##WriteOn && obj in player) return 9;
+  if (obj notin player) return 9;
+  if (obj in player) return 1; 
+  return 0;
+];
+
+[ UnknownVerb word i;
+  objectloop (i in memory)
+      if (word==(i.&name)-->0) { the_spell_was = i; return 'c,cast'; }
+  rfalse;
+];
+
+[ PrintVerb v;
+  if (v=='c,cast') { print "cast a spell at"; rtrue; }
+  rfalse;
+];
+
+spellScroll old_scroll "old scroll"
+  with name "old";
+
+  Spell -> zimbor_spell
+     with name "zimbor",
+          purpose "turn one really big city into lots of tiny, little ashes",
+          magic
+          [; deadflag = 4;
+             "Everyone is very upset with you when the entire city burns down, 
+              and a lot  of people want to make your life very, very miserable.
+              So it's probably a good thing that you're already dead.";
+             
+          ],
+     has ungnustoable;
+
+spellScroll new_scroll "new scroll"
+  with name "new";
+
+Spell -> zemdor_spell
+   with name "zemdor",
+        purpose "turn original into triplicate",
+        magic
+        [; if (second == report)
+           { achieved(2);
+             NotifyTheScore();
+             deadflag = 2;
+             "^You triplicate the report, and go home. Later, when the entire city of
+              Mareilon is completely destroyed while you are visting your mother, you
+              decide that maybe you made a mistake. Then you deny all knowledge of
+              the incident.";
+           }
+           if (second == Gunther)
+           { deadflag = 3;
+             "Well that was a BIG mistake. You see, Gunther actually enjoys
+              work, and with 3 of him around, your services are no longer required.";
+           }
+           if (second == junk)
+           { deadflag = 5;
+             "The already huge piles of junk multiply. Unfortunately for you, they then
+              collapse on top of you.";
+           }
+           if (second == player)
+           { deadflag = 6;
+             "You feel feel somewhat what lighthead head headed fororor a momentoment moment,,, befobeforere yoyouyou pppaaassssss ooouuuttt... ... ...^
+              ByByBy ttthhheee time time time you youyou wake wake wake up up up,,, it's it's it's 6:00, 6:00, 6:00 and and and you you you are are are fired fired fired (all three of you).^
+              (all three of you).^
+              (all three of you).^";
+           }
+           if (second == reports)
+           { if (gunther in location)
+             { PlayerTo(hallway);            
+              "Gunther watches in horror as you triplicate his reports, and then he
+               attacks you with his bare hands, pushing you out of his cubicle.
+               He probably needs to cut down on the coffee.";
+             }
+              
+              
+             "The pile of reports is now three times larger than it was. Gunther's not going to
+              be happy.";
+           }
+           "Sadly, the spell fails.";
+        ];
+
+
+Object grue "grue"
+  with description "The grue is a sinister, lurking presence in the 
+                    dark places of the earth. Its favorite diet is 
+                    civil servants, but its insatiable appetite is 
+                    tempered by its fear of light. No grue has ever
+                    been seen by the light of day, and few have 
+                    survived its fearsome jaws to tell the tale.^
+                    (It's also completely irrelevent to this game, 
+                     because they were all wiped out almost 800 years
+                     ago)",
+       name "grue" "grue?",
+  has questionable;
+
+Object grue2 "g***" !Did anyone ever try this? Somehow I doubt it.
+  with description [; gruebox();
+                   ],
+       name "g***" "g***?",
+  has  questionable;
+
+[ AttackWithWeaponSub;
+  if (noun == gunther && second == pen)
+     { print "You poke Gunther with the pen, causing him to scream. He pushes you into the hallway.^";
+       if (new_scroll in player)
+       { move new_scroll to location;
+         print "(Oh, and by the way, when Gunther screamed, you dropped the scroll.)^";
+       }
+       gun_cubicle.done = 3;  
+       give gunther general;
+       PlayerTo(hallway, 1);
+       rtrue; 
+       
+     }
+  if (noun == player)
+     "That would be stupid.";
+  if (noun == gunther && second == elvishsword)
+     "As annoying as Gunther is, I think homicide is a bit much.";
+];    
+
+[ Amusing;
+  HelpSub();
+];
+
+[ SailorSub;
+  print "Nothing happens here. Well, why would it? 
+         Who were you trying to talk to?";
+  if (gunther in location) print " Gunther? Gunther's not a sailor!";
+  " Sometimes I wonder about you, I really do.";
+];
+
+
+[ HelpSub;
+  if (deadflag ~= 2) 
+  DoMenu("There is relatively interesting information provided on the following:^
+               ^     If you've never played the Enchanter Trilogy, read this
+               ^     You may also want to read this
+               ^     Why there are no online hints
+               ^     Legal Stuff
+               ^     Reporting Bugs
+               ^     Credits^",
+               HelpMenu, HelpInfo);
+  else
+  DoMenu("There is relatively interesting information provided on the following:^
+              ^     If you've never played the Enchanter Trilogy, read this
+              ^     You may also want to read this
+              ^     Why there are no online hints
+              ^     Legal Stuff
+              ^     Reporting Bugs
+              ^     Credits
+              ^     Have you tried...",
+              HelpMenu, HelpInfo);
+];
+
+[ HelpMenu;
+  if (menu_item==0)  { item_width=6; item_name="Help & Stuff";
+                       if (deadflag == 2) return 7; else return 6;
+                     }
+  if (menu_item==1)  { item_width=27; item_name="If you've never played the Enchanter Trilogy, read this"; }
+  if (menu_item==2)  { item_width=16; item_name="You may also want to read this";                          }
+  if (menu_item==3)  { item_width=15; item_name="Why there are no online hints";                           }
+  if (menu_item==4)  { item_width=6;  item_name="Legal Stuff";                                             }
+  if (menu_item==5)  { item_width=7;  item_name="Reporting Bugs";                                          }
+  if (menu_item==6)  { item_width=3;  item_name="Credits";                                                 }
+  if (menu_item==7)  { item_width=8;  item_name="Have you tried?";                                         }
+];
+
+[ HelpInfo;
+  if (menu_item==1)
+  { print "Play the Enchanter Trilogy.^";
+    return 1;
+  }
+  if (menu_item==2)
+  { print "Sooner or later, you are going to come across scrolls. 
+           These scrolls have spells written on them, which you can cast
+           at various objects. For instance, if you have a scroll which
+           reads ~rezrov: open locked or enchanted objects~, you could type
+           ~cast rezrov at door~ or just ~rezrov door~, and it should open. 
+           An unfortate side-effect of this, however, is that the scroll 
+           disappears once used.^";
+    return 1;
+  }
+  
+  if (menu_item==3)
+  { "If you're looking for hints, I afraid you won't find any. 
+     This is such a short game that if I gave any hints it
+     would be completely ruined.^"; 
+  } 
+  if (menu_item==4)
+  { Banner();
+    "^This game is based on part of Enchanter's manual.^ 
+     The title of this game is based on part of Zork: Grand Inquisitor.^
+     The magic system is based on part of the code from Balances.^^
+     Very little of the game was actually my idea, but I stuck it all together,
+     so I still hold the copyright. Ha.^^
+     Enchanter was copyrighted by Infocom, which is now owned by Activision.
+     I have not attempted to get permission from them to use this, however,
+     I sincerely doubt they mind. (Hey, Activision, if you're reading this,
+     and you really do mind, just tell me. I'll gladly stop releasing the game.
+     Well, not gladly. Actually, I'll probably sulk for a while. However, I
+     will stop releasing it.)";
+   }
+ if (menu_item==5)
+  { print "If you notice anything that appears to be a bug, have any ideas on
+           how I can improve this game, or just want to mention how brilliant the
+           game is, and how much of a genius I am, please email me at
+           Noslwop@@64Hotmail.Com. Despite the fact that this game was supposed
+           to just be something I did in a couple of hours, to take my mind off
+           another game I'm writing, I've been working on this one for a few
+           months now and I'm starting to find it more enjoyable to fix this
+           game than write the other one.";
+    rtrue;
+  }   
+     
+  if (menu_item==6)
+  { creditssub();
+    rtrue;
+    
+  }
+  if (menu_item==7)
+  { !#ifdef target_zcode;
+    print "(Press ENTER to return to menu, or H for another hint.)^^";
+    print "Have you tried...^^";
+    if (GiveHint("(1/8)  searching the junk a lot more?")==1)
+    return 2;
+    if (GiveHint("(2/8)  zemdoring various objects, such as the junk, Gunther or yourself?")==1)
+    return 2;
+    if (GiveHint("(3/8)  hitting Gunther with the pen?")==1)
+    return 2;
+    if (GiveHint("(4/8)  throwing the pen at Gunther?")==1)
+    return 2;
+    if (GiveHint("(5/8)  reading (rather than examining) the pen?")==1)
+    return 2;
+    if (GiveHint("(6/8)  saying ~xyzzy~ or ~plugh~?")==1)
+    return 2;
+    if (GiveHint("(7/8)  saying ~hello sailor~?")==1)
+    return 2;
+    if (GiveHint("(8/8)  contacting the author at Noslwop@@64Hotmail.com to tell him what you thought of his game?")==1)
+    return 2;
+    !#ifnot;
+    !"Have you tried...^^
+    !searching the junk a lot more?^
+    !zemdoring various objects, such as the junk, Gunther or yourself?^
+    !hitting Gunther with the pen?^
+    !throwing the pen at Gunther?^
+    !reading (rather than examining) the pen?^
+    !saying ~xyzzy~ or ~plugh~?^
+    !saying ~hello sailor~?^
+    !contacting the author at Noslwop@@64Hotmail.com to tell him what you thought of his game?";
+    
+    !#endif;
+    
+    
+  }
+
+  
+]; 
+   
+Include "Grammar";
+
+[ SpellScope;
+  rtrue;
+];
+  
+
+!----------------------------------------
+!Grammar for spells
+!----------------------------------------
+
+Verb "spells" "memory"             *                           -> Spells;
+Verb "learn" "memorize" "memorise" * scope=ReadableSpell       -> Learn;
+Extend "examine" first             * scope=ReadableSpell       -> Examine;
+Verb "c,cast"                      *                           -> CastOne
+                                   * noun                      -> CastOne;
+Verb "cast"                        * is_spell                  -> Cast
+                                   * is_spell "at" noun        -> Cast
+                                   * is_spell "on" noun        -> Cast;
+Verb meta "help" "hint" "hints" 
+          "instructions" "info" 
+          "information"            *                           -> Help;
+Extend "attack" first              * animate "with" weapon     -> AttackWithWeapon;
+Extend "read"   replace            * scope=spellscope          -> Read
+                                   * noun		       -> Read;
+Extend "examine" first             * scope=spellscope          -> Read;          
+Verb "write" 			     * "report"                  -> WriteReport
+                                   * "report" "on" noun        -> WriteReportOn
+ 				           * "on" noun                 -> WriteOn;
+Verb "lift"                        * noun                      -> Take;
+Verb "hello" "hi"                  * "sailor"                  -> Sailor;
+
