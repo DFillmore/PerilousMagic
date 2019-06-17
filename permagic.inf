@@ -1,6 +1,6 @@
 !===============================================================================!
 ! Perilous Magic - The Source Code!                                             !
-! Copyright 1999-2014 by David Fillmore.                                        !
+! Copyright 1999-2019 by David Fillmore.                                        !
 ! This work is licensed under the Creative Commons Attribution-NonCommercial    !
 ! 4.0 International License.                                                    !
 ! To view a copy of this license, visit                                         !
@@ -9,57 +9,34 @@
 ! View, California, 94041, USA.                                                 !    
 !===============================================================================!
 
-#ifndef TARGET_GLULX; !This only compiles if the target isn't glulx.
-Iffalse #version_number==6; !This only compiles if the target isn't v6.
 Constant Story "Perilous Magic";
 Constant Headline "^A Really Short Interactive Comic Tragedy.
                    ^Copyright David Fillmore 1999^";
-endif;
 
-Iftrue #version_number==6; !And this only compiles if the version is v6;
-Constant Story "Perilous Magic";
-Constant Headline "^A Really Short Graphical Interactive Comic Tragedy.
-                   ^Copyright David Fillmore 1999^";
-endif;
+Constant bold_font 1;
+Constant roman_font 0;
 
-#endif;
-constant bold_font 1;
-constant roman_font 0;
 Attribute ungnustoable; !Means that the spell isn't gnustoable. There aren't any
                         !spell book in the game, but it prints up a line about
                         !the spell being long.
+
 Attribute weapon; !Can be used to attack things (mainly Gunther) with.
+
 Attribute questionable; !You can ask a question about this object. For instance:
                         !WHAT IS A GRUE or WHO IS GUNTHER.
 
-!#ifndef TARGET_GLULX;
-!    Constant TARGET_ZCODE;
-!    Constant WORDSIZE 2;
-!#endif;
 
-#ifdef TARGET_GLULX;
-Constant Story "Perilous Magic";
-Constant Headline "^A Really Short Interactive Comical Tragic Glulx Port.
-                   ^Copyright David Fillmore 1999^";
-#endif;
 
 ! This routine is so that I don't have to type out two different sets of styles,
 ! one for glulx and one for zcode. Instead I just call changefont(bold_font);
+!
+! And now, of course, I'm removing all the Glulx code, so this is pointless.
 [ changefont font;
   if (font == bold_font)
-  { #ifdef TARGET_ZCODE;
-     style bold;
-    #ifnot;
-     glk($0086, 4);
-    #endif;
-  }
+    style bold;
+    
   if (font == roman_font)
-  { #ifdef TARGET_ZCODE;
      style roman;
-    #ifnot;
-     glk($0086, 0);
-    #endif;
-  }
 ];
 
 Constant Max_score 3;
@@ -69,15 +46,7 @@ Constant Amusing_Provided;
 Array task_scores -> 1 1 1;
 Global the_spell_was = gnusto_spell;
 Replace StrongSub;
-#ifdef TARGET_ZCODE;
-iftrue #version_number==6;
-Include "V6Defs";
-endif;
-#endif;
 Replace NotifyTheScore;
-#ifdef TARGET_GLULX;
-Replace DrawStatusLine;
-#endif;
 Replace Keyboard;
 Replace KeyboardPrimitive;
 
@@ -89,104 +58,57 @@ Include "fkeys";
   print "^[Your score has just gone ";
   if (last_score > score)
   { i=last_score-score;
-     #ifdef TARGET_ZCODE;
-     @sound_effect 2; ! Makes the game go bing when you lose a point. You can't
+     @sound_effect 2; ! Makes the game go boop when you lose a point. You can't
                       ! lose points, but who cares?
      #endif;
     print "down";
   }
   else
   { i=score-last_score;
-    #ifdef TARGET_ZCODE;
-    @sound_effect 1; ! Makes the game go bing in a different way, when you gain
-                     ! a point.
-    #endif;
+    @sound_effect 1; ! Makes the game go beep  when you gain a point.
     print "up";
   }
   print " by "; EnglishNumber(i); print " point";
   if (i>1) print "s"; print ".]^";
   changefont(roman_font);
 ];
-#ifdef TARGET_GLULX;
-[ DrawStatusLine width height posa posb; !I had to replace the status line for 
-                                         !glulx, because the version I used
-                                         !didn't print the time.
-    if (gg_statuswin == 0)
-        return;
-
-    glk($002F, gg_statuswin); ! set_window
-    StatusLineHeight(GG_STATUSWIN_SIZE);
-
-    glk($0025, gg_statuswin, gg_arguments, gg_arguments+4); ! window_get_size
-    width = gg_arguments-->0;
-    height = gg_arguments-->1;
-    posa = width-26; posb = width-13;
-
-    glk($002A, gg_statuswin); ! window_clear
-
-    glk($002B, gg_statuswin, 1, 0); ! window_move_cursor
-    if (location == thedark) {
-        print (name) location;
-    }
-    else {
-        FindVisibilityLevels();
-        if (visibility_ceiling == location)
-            print (name) location;
-        else 
-            print (The) visibility_ceiling;
-    }
-
-    if (width > 66) {
-        glk($002B, gg_statuswin, posa-1, 0); ! window_move_cursor
-        print (string) SCORE__TX;
-        LanguageTimeOfDay(sline1, sline2);
-
-        
-!        print (string) MOVES__TX, sline2;
-    }
-    if (width > 53 && width <= 66) {
-        glk($002B, gg_statuswin, posb-1, 0); ! window_move_cursor
-        print sline1, "/", sline2;
-    }
-
-    glk($002F, gg_mainwin); ! set_window
-];
-#endif;
 
 ! This is what happens when you swear. Most of you won't have found this, because
 ! of course no one ever swears at a computer game. I put this in when I realised
-!  that the game had been printing "Real adventures do not used such language.",
+! that the game had been printing "Real adventures do not used such language.",
 ! and your character isn't an adventurer. I decided to use the text from all
 ! the other Zork games I knew of, editing them so they made sense. Sort of.
 ! I was going to use the replies from Dungeon as well, but that required me to
 ! swear back at the player, something I'm not prepared to do unless they send me
 ! a really nasty e-mail.
+
 [ StrongSub; 
   switch(random(18))
-  { 1: "Moral turpitude is grounds for removal from your job!"; !Spellbreaker.
-    2: print "You suddenly feel less intelligent.^"; !Beyond Zork. This is my favourite.
+  { 1: "Moral turpitude is grounds for removal from your job!"; ! Spellbreaker.
+    2: print "You suddenly feel less intelligent.^"; ! Beyond Zork. This is my favourite response.
        changefont(bold_font);
        print " [Your intelligence has not been affected.]^";
        changefont(roman_font);
        rtrue;
-    3: "Such language from a civil servant!"; !Enchanter and Sorcerer.
-    4: "[What charming language.]"; !Wishbringer.
-    5: "[Computers aren't impressed by naughty words.]"; !Wishbringer.
-    6: "[Grow up.]"; !Wishbringer
-    7: "[Computers aren't impressed by naughty words!]"; !Zork Zero.
-    8: "[What charming language!]"; !Zork Zero.
-    9: "[You ought to be ashamed of yourself!]"; !Zork Zero.
-    10: "[Hey, save that talk for the locker room!]"; !Zork Zero.
-    11: "[Step outside and say that!]"; !Zork Zero.
-    12: "[And so's your old man!]"; !Zork Zero.
-    13: "Such language in a high-class establishment like this!"; !The Zork Trilogy.
-    14: "Real civil servants do not use such language."; !Balances and Zork: The Undiscovered Underground.
-    15: "This is a family game. Play Nice."; !Enlightenment.
-    16: "Such language from a civil servant such as yourself! The ground rumbles suddenly!"; !SpiritWrak.
-    17: "You swear sulphurously to yourself."; !Zork: A Troll's Eye View.
-    18: "Such language betrays your low intelligence."; !Beyond Zork.
+    3: "Such language from a civil servant!"; ! Enchanter and Sorcerer.
+    4: "[What charming language.]"; ! Wishbringer.
+    5: "[Computers aren't impressed by naughty words.]"; ! Wishbringer.
+    6: "[Grow up.]"; ! Wishbringer
+    7: "[Computers aren't impressed by naughty words!]"; ! Zork Zero.
+    8: "[What charming language!]"; ! Zork Zero.
+    9: "[You ought to be ashamed of yourself!]"; ! Zork Zero.
+    10: "[Hey, save that talk for the locker room!]"; ! Zork Zero.
+    11: "[Step outside and say that!]"; ! Zork Zero.
+    12: "[And so's your old man!]"; ! Zork Zero.
+    13: "Such language in a high-class establishment like this!"; ! The Zork Trilogy.
+    14: "Real civil servants do not use such language."; ! Balances and Zork: The Undiscovered Underground.
+    15: "This is a family game. Play Nice."; ! Enlightenment.
+    16: "Such language from a civil servant such as yourself! The ground rumbles suddenly!"; ! SpiritWrak.
+    17: "You swear sulphurously to yourself."; ! Zork: A Troll's Eye View.
+    18: "Such language betrays your low intelligence."; ! Beyond Zork.
   }
 ];
+
 ! I had to copy out all this, just to change one message.
 Object LibraryMessages 
   with before
@@ -224,143 +146,6 @@ Object LibraryMessages
 Replace QuitSub;
 Replace RestartSub;
 Include "VerbLib";
-#ifdef TARGET_ZCODE;
-iffalse #version_number==6;
-Release 11;
-endif;
-
-iftrue #version_number==6;
-Replace V6Init;
-Include "V6";
-[ V6Init style;
-!   pretty_flag = 0;
-    MainWin.Activate();
-    #ifndef NOZPIC;
-    ZPicInit();
-    #endif;
-    MachineInit();
-    ! needed to prevent calling of (-1).Finish()
-    ActiveZWinStyle=DavidZWinStyle;
-    if (style == 0)
-            style = DavidZWinstyle;
-    style.Activate();
-    @erase_window -1;
-    give ActiveZWinstyle ~general;    
-];
-
-
-Release 2;
-
-Object DavidZWinstyle
-   class ZWinstyle,
-   with Init 
-        [ tmp; 
-          tmp = TitleBar.GetHeight();
-          !ZWin4.SetColours(-1, c_white);
-          @split_window tmp;
-          StatusWin.SetSize(TitleBar.GetHeight(), TitleBar.GetWidth());
-          ZWin2.SetSize(Pillar1.GetHeight(), Pillar1.GetWidth());
-          ZWin3.SetSize(Pillar2.GetHeight(), Pillar2.GetWidth());
-          ZWin2.SetLoc( StatusWin.GetYSize(), 1);
-          ZWin3.SetLoc( StatusWin.GetYSize(), (ZWin2.GetXSize() + MainWin.GetXSize()));
-
-          !ZWin2.WinstyleOff(WS_SCROLL);
-          MainWin.SetColours(2, -1);
-          MainWin.SetSize((StatusWin.GetYSize() + ZWin2.GetYSize()), StatusWin.GetXSize() - (ZWin2.GetXSize() * 2));
-          MainWin.SetLoc(0, Pillar1.GetWidth());
-               
-
-          !MainWin.SetMargins(Pillar1.GetWidth(),Pillar2.GetWidth());
-               
-              
-          StatusWin.SetColours(-1, -1);
-          StatusWin.SetFontstyle(ST_roman);
-          MainWin.SetFontstyle(ST_ROMAN);
-        ],
-        
-        Update 
-        [ charh charw width posa posb posc oldwin height;
-          !!   Default statusline routine
-          !!   based on inform library DrawStatusLine
-          oldwin = ActiveZWindow; 
-          StatusWin.Activate();
-          StatusWin.Erase();
-          StatusWin.DrawPic(TitleBar, 1, -1);
-          charh = StatusWin.GetCharHeight();
-          charw = StatusWin.GetCharWidth();
- 
-          width = StatusWin.GetXSize();
-          height = StatusWin.GetYSize();
-          
-          posa = (width / 3) / 2;
-          posb = (width /3) *2;
-          posc = (height / 4);
-          
-          StatusWin.SetColours(2,-1);
-          if (location.nw_to == 0)
-          statuswin.DrawPic(NoNW, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoNW.GetWidth()/2));
-
-          if (location.n_to == 0) 
-          statuswin.DrawPic(NoNorth, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoNorth.GetWidth()/2));
-
-          if (location.ne_to == 0) 
-          statuswin.DrawPic(NoNE, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoNE.GetWidth()/2));
-
-          ! Second line
-          if (location.w_to == 0)
-          statuswin.DrawPic(NoWest, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoWest.GetWidth()/2));
-          if (location.e_to == 0) 
-          statuswin.DrawPic(NoEast, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoEast.GetWidth()/2));
-
-          ! Third line
-          if (location.sw_to == 0)
-          statuswin.DrawPic(NoSW, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoSW.GetWidth()/2));
-          
-          if (location.s_to == 0)
-          statuswin.DrawPic(NoSouth, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoSouth.GetWidth()/2));
-          
-          if (location.se_to == 0)
-          statuswin.DrawPic(NoSE, 
-          1, 
-          (statuswin.GetXSize()/2) - (NoSE.GetWidth()/2));
-
-          StatusWin.SetColours(2,-1);
-          StatusWin.SetCursor(posc, posa);
-          print (name) location;
-          StatusWin.SetCursor(posc, posb);
-          StatusWin.SetColours(2,-1);
-          print (string) TIME__TX;
-          LanguageTimeOfDay(sline1, sline2); 
-          ZWin2.Activate();
-          ZWin2.Erase();
-          ZWin2.DrawPic(Pillar1, 1, -1);
-          ZWin3.Activate();
-          ZWin3.Erase();
-          ZWin3.DrawPic(Pillar2, 1, -1);
-          MainWin.Activate();
-          MainWin.SetColours(2,-1);
-
-];
-endif;
-#endif;
-#ifdef TARGET_GLUXL;
-
-Release 3; !This doesn't seem to work, but *it* is Release 2.
-#endif;
 
 Object questions "qs";
   
@@ -382,8 +167,8 @@ Verb "what" "who"
                 * "is"  scope=Topic              -> Query
                 * "was" scope=Topic              -> Query;
 
-!I doubt anyone got this to print up. Who's going to type "WHAT IS A G***"?
-!Also, it doesn't work properly in the z6 version.
+! I doubt anyone got this to print up. Who's going to type "WHAT IS A G***"?
+
 [ Gruebox;
 box "~It's t*** that you'll *** meeting a g***"
     " Your death will be g***some, g***lling and grim."
@@ -396,9 +181,8 @@ box "~It's t*** that you'll *** meeting a g***"
 
 
 
-[ QuitSub; #ifdef TARGET_ZCODE;
-           @sound_effect 2; !bing.
-           #endif;
+[ QuitSub; 
+           @sound_effect 2; ! boop.
            L__M(##Score);
            PrintRank();
            L__M(##Quit,2); if (YesOrNo()~=0) quit;
@@ -420,11 +204,7 @@ box "~It's t*** that you'll *** meeting a g***"
 ];
 
 [ TitlePage i;
-   #ifdef Target_glulx;
-   glk($002A, gg_mainwin); 
-   #ifnot;
    @erase_window -1; 
-   #endif;
    print "^^^^^^^^^^^^^";
    i = 0->33; 
    if (i==0) i=80; 
@@ -441,29 +221,15 @@ box "~It's t*** that you'll *** meeting a g***"
    box "A rose-red city--'half as old as Time'!"
        ""
        "-- Rev. John William Burgon, ~Petra~ 1. 132";
-   #ifdef Target_glulx;
-   KeyCharPrimitive();
-   !do { KeyCharPrimitive(i); } until (i == 32 or 10 or 13);
-   #ifnot;
    do { @read_char 1 0 0 i; } until (i==32 or 10 or 13);
-   #endif;
 
-   #ifdef Target_glulx;
-   glk($002A, gg_statuswin); 
-   glk($002A, gg_mainwin); 
-   #ifnot;
+
    @erase_window -1; 
-   #endif;
+
 ];
 
 [ Initialise s;
   SetupFKeys();
-  #ifdef TARGET_ZCODE;
-  #iftrue #version_number==6;
-  V6Init(); !you can pass a ZWinstyle object to
-            !V6Init to be used as the startup style.
-  #endif;
-  #endif;
   SetTime( 60 * 17 + 00, 1);
   location = your_cubicle;
   move pen to player;
@@ -478,45 +244,6 @@ box "~It's t*** that you'll *** meeting a g***"
         only have one more job: write out a report in triplicate. You've just
         finished one, but now you've run out of paper!^";
 ];
-#ifdef TARGET_ZCODE;
-iftrue #version_number==6;
-
-ZPic TitleBar
-private picnum 5;
-
-ZPic NoNorth
-  private picnum 17;
-
-ZPic NoNE
-  private picnum 18;
-
-ZPic NoEast
-  private picnum 19;
-
-ZPic NoSE
-  private picnum 20;
-
-ZPic NoSouth
-  private picnum 21;
-
-ZPic NoSW
-  private picnum 22;
-
-ZPic NoWest
-  private picnum 23;
-
-ZPic NoNW
-  private picnum 24;
-
-ZPic Pillar1
-  private picnum 497;
-
-ZPic Pillar2
-  private picnum 498;
-
-  endif;
-#endif;
-
 
 [ GiveHint hint keypress;
    print (string) hint; new_line; new_line;
@@ -592,7 +319,7 @@ ZPic Pillar2
 ];
 
 [ CreditsSub;
-  #ifdef TARGET_ZCODE;
+
 
   @erase_window -1;
   #endif;
@@ -612,11 +339,7 @@ ZPic Pillar2
   print "ct^";
   print "Francesco Bova^";
   print "Martin Braun^";
-  #ifdef TARGET_ZCODE;
-  #iftrue #version_number==6;
-  print "Jason C. Penney^";
-  #endif;
-  #endif;
+
 
   changefont(bold_font);
   print "^Important! Read this!^";
@@ -746,19 +469,12 @@ Object -> -> junk "junk"
                                print "Sifting through the piles of junk, you come across a copy
                                 of the U.S. News and Dungeon Report dated ";
                                
-                               #ifdef TARGET_ZCODE; !This prints the date of compilation if the target is ZCode.
+                               ! This prints the date of compilation
                                for (i=22:i<24:i++) print (char) 0->i;
                                print "/";
                                for (i=20:i<22:i++) print (char) 0->i;
                                print "/";
                                for (i=18:i<20:i++) print (char) 0->i;
-                               #ifnot; !This prints the date of compilation if the target is Glulx.
-                               for (i=4:i<6:i++) print (char) 54->i;
-                               print "/";
-                               for (i=2:i<4:i++) print (char) 54->i;
-                               print "/";
-                               for (i=0:i<2:i++) print (char) 54->i;
-                               #endif;
                                new_line;
                                rtrue;
                              }
@@ -788,28 +504,15 @@ Object newspaper "newspaper"
        description [ i; changefont(bold_font);
                         print "      U.S. News and Dungeon Report^ ";
                         changefont(roman_font);
-                        #ifdef TARGET_ZCODE; !The date for ZCode.
+
                         for (i=22:i<24:i++) print (char) 0->i;
                         print "/";
                         for (i=20:i<22:i++) print (char) 0->i;
                         print "/";
                         for (i=18:i<20:i++) print (char) 0->i;
-                        #ifnot; !The date for Glulx.
-                        for (i=4:i<6:i++) print (char) 54->i;
-                        print "/";
-                        for (i=2:i<4:i++) print (char) 54->i;
-                        print "/";
-                        for (i=0:i<2:i++) print (char) 54->i;
-                        #endif;
 
 
                         print "^^Edited some text a bit. No big changes.^";
-                        #ifdef TARGET_ZCODE;
-                        #iftrue #version_number==6;
-                        print "This gamefile is equivalent to release 11 of Perilous Magic, but
-                               it uses Zork Zero's graphics.";
-                        #endif;
-                        #endif;
                         new_line;
                         rtrue;
                            
@@ -1200,11 +903,8 @@ Class SpellScroll
       }
       wn=verb_wordnum; if (vb~=0) wn++;
       x=NextWordStopped();
-      #ifdef TARGET_ZCODE;
+
       for (i=player+1:i<=top_object:i++)
-      #ifnot; ! TARGET_GLULX
-       objectloop (i)
-      #endif; ! TARGET_
           if (i ofclass Spell && Refers(i,x)==1
               && i has known_about) flag=1;
       if (flag==1)
