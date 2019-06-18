@@ -13,48 +13,32 @@ Constant Story "Perilous Magic";
 Constant Headline "^A Really Short Interactive Comic Tragedy.
                    ^Copyright David Fillmore 1999^";
 
-Constant bold_font 1;
-Constant roman_font 0;
-
-Attribute ungnustoable; !Means that the spell isn't gnustoable. There aren't any
-                        !spell book in the game, but it prints up a line about
-                        !the spell being long.
-
-Attribute weapon; !Can be used to attack things (mainly Gunther) with.
-
-Attribute questionable; !You can ask a question about this object. For instance:
-                        !WHAT IS A GRUE or WHO IS GUNTHER.
-
-
-
-! This routine is so that I don't have to type out two different sets of styles,
-! one for glulx and one for zcode. Instead I just call changefont(bold_font);
-!
-! And now, of course, I'm removing all the Glulx code, so this is pointless.
-[ changefont font;
-  if (font == bold_font)
-    style bold;
-    
-  if (font == roman_font)
-     style roman;
-];
-
 Constant Max_score 3;
 Constant Number_Tasks 3;
 Constant Tasks_Provided;
 Constant Amusing_Provided;
+
+Attribute ungnustoable; ! Means that the spell isn't gnustoable. There aren't any
+                        ! spell book in the game, but it prints up a line about
+                        ! the spell being long.
+
+Attribute weapon; ! Can be used to attack things (mainly Gunther) with.
+
+Attribute questionable; ! You can ask a question about this object. For instance:
+                        ! WHAT IS A GRUE or WHO IS GUNTHER.
+
 Array task_scores -> 1 1 1;
 Global the_spell_was = gnusto_spell;
+
 Replace StrongSub;
 Replace NotifyTheScore;
 Replace Keyboard;
 Replace KeyboardPrimitive;
 
 Include "Parser";
-Include "fkeys";
 
 [ NotifyTheScore i;
-  changefont(bold_font);
+  style bold;
   print "^[Your score has just gone ";
   if (last_score > score)
   { i=last_score-score;
@@ -70,7 +54,7 @@ Include "fkeys";
   }
   print " by "; EnglishNumber(i); print " point";
   if (i>1) print "s"; print ".]^";
-  changefont(roman_font);
+  style roman;
 ];
 
 ! This is what happens when you swear. Most of you won't have found this, because
@@ -86,9 +70,9 @@ Include "fkeys";
   switch(random(18))
   { 1: "Moral turpitude is grounds for removal from your job!"; ! Spellbreaker.
     2: print "You suddenly feel less intelligent.^"; ! Beyond Zork. This is my favourite response.
-       changefont(bold_font);
+       style bold;
        print " [Your intelligence has not been affected.]^";
-       changefont(roman_font);
+       style roman;
        rtrue;
     3: "Such language from a civil servant!"; ! Enchanter and Sorcerer.
     4: "[What charming language.]"; ! Wishbringer.
@@ -209,11 +193,11 @@ box "~It's t*** that you'll *** meeting a g***"
    i = 0->33; 
    if (i==0) i=80; 
    i=(i-50)/2;
-   changefont(bold_font); 
+   style bold; 
    font off; 
    spaces(i);
    print "                PERILOUS MAGIC^";
-   changefont(roman_font); 
+   style roman; 
    print "^^"; 
    spaces(i);
    print "         [Please press SPACE to begin.]^";
@@ -319,31 +303,28 @@ box "~It's t*** that you'll *** meeting a g***"
 ];
 
 [ CreditsSub;
-
-
   @erase_window -1;
-  #endif;
   print "^^^";
   Banner();
-  changefont(bold_font);
+  style bold;
   print "^Beta-Testers^";
-  changefont(roman_font);
+  style roman;
   print "Chad Schultz^
          Jonadab the Unsightly One^
          Kelly M.^
          Mark Silcox^^";
-  changefont(roman_font);
+  style roman;
   print "Other people who spotted bugs or gave suggestions^";
-  changefont(roman_font);
+  style roman;
   print "Randy Cox^";
   print "ct^";
   print "Francesco Bova^";
   print "Martin Braun^";
 
 
-  changefont(bold_font);
+  style bold;
   print "^Important! Read this!^";
-  changefont(roman_font);
+  style roman;
   "I put far more work into this game that is reasonable considering the size, mainly editing the code for the spell scrolls. I don't think I ever understood how I made them work.
    If you have any comments or questions, you can contact me at marvin@@64frobnitz.co.uk, and I might even notice eventually.";
 
@@ -501,9 +482,9 @@ Object brasslamp "lamp"
 
 Object newspaper "newspaper"
   with name "paper" "newspaper",
-       description [ i; changefont(bold_font);
+       description [ i; style bold;
                         print "      U.S. News and Dungeon Report^ ";
-                        changefont(roman_font);
+                        style roman;
 
                         for (i=22:i<24:i++) print (char) 0->i;
                         print "/";
@@ -632,9 +613,8 @@ Object -> -> reports "pile of reports"
 ! I had to change it to enable the player to cast spells directly from
 ! spell scrolls.
 Attribute known_about;                 ! Player has seen this spell somewhere
-
-
 Attribute is_spell;
+
 Class  Spell
   with name "spell" "spells", article "the",
        number 0,
@@ -720,10 +700,10 @@ Object memory
            if (sp.number==0) remove sp;
            rtrue;
        ];
-!There is no way to get the gnusto spell, but taking it out makes the compiler
-!complain. The same is true of alot of the stuff in the spell system. I
-!just couldn't be bothered to go through it all and edit it so it only contained
-!what I needed. I'm lazy.
+! There is no way to get the gnusto spell, but taking it out makes the compiler
+! complain. The same is true of alot of the stuff in the spell system. I
+! just couldn't be bothered to go through it all and edit it so it only contained
+! what I needed. I'm lazy.
 Spell gnusto_spell
   with name "gnusto",
        purpose "copy a scroll into your spell book",
@@ -785,8 +765,8 @@ Class SpellBook
               rtrue;
        ];
 
-!The class "Scroll" was changed to "SpellScroll" because V6Lib uses an object or
-!class or property or something called "Scroll" somewhere in its code.
+! The class "Scroll" was changed to "SpellScroll" because V6Lib uses an object or
+! class or property or something called "Scroll" somewhere in its code.
 Class SpellScroll
   with parse_name
        [ i j k; j=-1;
@@ -918,10 +898,10 @@ Class SpellScroll
              "You have no text of that spell to copy.";
       }
       if (vb==1)
-         "After a few years, most civil servants lose the brain power nessecary to learn spells.
+         "After a few years, most civil servants lose the brain power necessary to learn spells.
           However, you could probably cast one straight from a scroll.";
       if (vb==2 or 3)
-         "After a few years, most civil servants lose the brain power nessecary to learn spells.
+         "After a few years, most civil servants lose the brain power necessary to learn spells.
           However, you could probably cast one straight from a scroll.";
   }
   rfalse;
@@ -984,7 +964,7 @@ Spell -> zemdor_spell
            if (second == Gunther)
            { deadflag = 3;
              "Well that was a BIG mistake. You see, Gunther actually enjoys
-              work, and with 3 of him around, your services are no longer required.";
+              his work, and with 3 of him around, your services are no longer required.";
            }
            if (second == junk)
            { deadflag = 5;
