@@ -13,6 +13,8 @@ Constant Story "Perilous Magic";
 Constant Headline "^A Really Short Interactive Comic Tragedy.
                    ^Copyright David Fillmore 1999^";
 
+Release 11;
+
 Constant Max_score 3;
 Constant Number_Tasks 3;
 Constant Tasks_Provided;
@@ -32,8 +34,6 @@ Global the_spell_was = gnusto_spell;
 
 Replace StrongSub;
 Replace NotifyTheScore;
-Replace Keyboard;
-Replace KeyboardPrimitive;
 
 Include "Parser";
 
@@ -212,7 +212,6 @@ box "~It's t*** that you'll *** meeting a g***"
 ];
 
 [ Initialise s;
-  SetupFKeys();
   SetTime( 60 * 17 + 00, 1);
   location = your_cubicle;
   move pen to player;
