@@ -44,7 +44,6 @@ Include "Parser";
   { i=last_score-score;
      @sound_effect 2; ! Makes the game go boop when you lose a point. You can't
                       ! lose points, but who cares?
-     #endif;
     print "down";
   }
   else
@@ -1127,7 +1126,7 @@ Object grue2 "g***" !Did anyone ever try this? Somehow I doubt it.
     
   }
   if (menu_item==7)
-  { !#ifdef target_zcode;
+  { 
     print "(Press ENTER to return to menu, or H for another hint.)^^";
     print "Have you tried...^^";
     if (GiveHint("(1/8)  searching the junk a lot more?")==1)
@@ -1145,13 +1144,7 @@ Object grue2 "g***" !Did anyone ever try this? Somehow I doubt it.
     if (GiveHint("(7/8)  saying ~hello sailor~?")==1)
     return 2;
     if (GiveHint("(8/8)  contacting the author at marvin@@64frobnitz.co.uk to tell him what you thought of his game?")==1)
-    return 2;
-    !#ifnot;
-
-    
-    !#endif;
-    
-    
+    return 2;   
   }
 
   
