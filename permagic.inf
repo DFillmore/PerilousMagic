@@ -216,7 +216,7 @@ box "~It's t*** that you'll *** meeting a g***"
   location = your_cubicle;
   move pen to player;
   StartDaemon(pen);
-  objectloop(s ofclass spellscroll)
+  objectloop(s ofclass scroll)
   { s.spell_name = child(s);
     startdaemon(s);
   }
@@ -274,7 +274,7 @@ box "~It's t*** that you'll *** meeting a g***"
 ];
 
 [ WriteReportOnSub;
-  if (noun ofclass spellscroll)
+  if (noun ofclass scroll)
   "No, you'd need a clean sheet of paper.";
   if (noun == junk) 
   "No, you'd need a clean sheet of paper.";
@@ -517,7 +517,7 @@ Object gunther "Gunther"
                     a ~fooble~ potion into his coffee.",
        react_before [; Give: if (noun notin player)
                              "You can't see any such thing.";
-                             if (noun ofclass spellscroll)
+                             if (noun ofclass scroll)
                              { gun_cubicle.done = 3;
                                move noun to gundesk;
                                if (noun == old_scroll && new_scroll in player) achieved(1);
@@ -527,7 +527,7 @@ Object gunther "Gunther"
                              }
                              else
                              "~I don't want that.~";
-                       Take: if (noun ofclass spellscroll && gunther has general)
+                       Take: if (noun ofclass scroll && gunther has general)
                              { PlayerTo(hallway, 1);
                                move noun to gundesk;
                                gun_cubicle.done = 3;
@@ -555,7 +555,7 @@ Object gunther "Gunther"
                      rtrue;
                    }
                    if (noun == pen) "You could put an eye out doing that!";
-          Show: if (noun ofclass spellscroll)
+          Show: if (noun ofclass scroll)
                 "Gunther glares at you. ~Give it back!~";
                 <<Give gunther noun>>;
           Ask: print "Gunther glares at you. ";
@@ -710,7 +710,7 @@ Spell gnusto_spell
             if (second ofclass SpellBook)
                "Unlike scrolls, spell books are magically guarded against
                 the 'theft' of their lore.";
-            if (second==0 || ~~(second ofclass spellScroll))
+            if (second==0 || ~~(second ofclass Scroll))
                "Your spell fizzles vaguely out.";
             if (second notin player)
                 "A gnusto spell would require close scrutiny of the scroll
@@ -763,9 +763,8 @@ Class SpellBook
               rtrue;
        ];
 
-! The class "Scroll" was changed to "SpellScroll" because V6Lib uses an object or
-! class or property or something called "Scroll" somewhere in its code.
-Class SpellScroll
+
+Class Scroll
   with parse_name
        [ i j k; j=-1;
               if (self has general)
@@ -848,7 +847,7 @@ Class SpellScroll
 
 [ CastSub s;
   the_spell_was = noun; memory.forget_spell(noun);
-  objectloop(s ofclass spellscroll && s.spell_name == the_spell_was)
+  objectloop(s ofclass scroll && s.spell_name == the_spell_was)
   { remove s;
     print "As you cast the spell, ", (the) s," vanishes!^";
   }
@@ -866,7 +865,7 @@ Class SpellScroll
       objectloop (i in memory
       !Without the following bit of code, casting from scrolls doesn't work 
       !properly. I can't remember why, but it doesn't.
-      || (parent(i) ofclass spellscroll && parent(i) in player)) 
+      || (parent(i) ofclass scroll && parent(i) in player)) 
       PlaceInScope(i);
   rfalse;
 ];
@@ -928,7 +927,7 @@ Class SpellScroll
   rfalse;
 ];
 
-spellScroll old_scroll "old scroll"
+Scroll old_scroll "old scroll"
   with name "old";
 
   Spell -> zimbor_spell
@@ -943,7 +942,7 @@ spellScroll old_scroll "old scroll"
           ],
      has ungnustoable;
 
-spellScroll new_scroll "new scroll"
+Scroll new_scroll "new scroll"
   with name "new";
 
 Spell -> zemdor_spell
